@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCO Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf7f2;--bg2:#f5f0e8;--bg3:#ede6d6;--bg4:#e4dac6;
+  --border:#d9cebc;--border2:#c8bda8;
+  --text:#2c2416;--text2:#6b5c42;--text3:#a8967a;
+  --amber:#c47c22;--amber2:#a86518;--amber-lt:#fdf3e0;
+  --terra:#c0503a;--terra-lt:#fdecea;
+  --green:#3a7d52;--green-lt:#e8f5ee;
+  --blue:#2e6fa3;--blue-lt:#e8f2fa;
+  --purple:#7755aa;--purp-lt:#f0ebf8;
+  --yellow:#c48c0a;--yell-lt:#fef8e0;
+  --shadow:0 1px 3px rgba(44,36,22,.07),0 4px 16px rgba(44,36,22,.05);
+  --shadow2:0 2px 8px rgba(44,36,22,.11),0 8px 32px rgba(44,36,22,.08);
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--serif:'Playfair Display',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;min-height:100vh;}
+.app{display:flex;flex-direction:column;height:100vh;}
+
+/* HEADER */
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:56px;flex-shrink:0;}
+.logo{font-family:var(--serif);font-size:19px;color:var(--text);}
+.logo em{color:var(--amber);font-style:normal;}
+.nav{display:flex;gap:3px;margin-left:24px;}
+.nav-btn{background:none;border:none;cursor:pointer;padding:7px 16px;border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;}
+.nav-btn:hover{background:var(--bg3);color:var(--text);}
+.nav-btn.active{background:var(--amber);color:#fff;}
+.header-left{display:flex;align-items:center;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.new-btn{background:var(--amber);border:none;cursor:pointer;padding:8px 18px;border-radius:7px;font-family:var(--sans);font-size:13px;font-weight:600;color:white;transition:all .15s;box-shadow:0 2px 6px rgba(196,124,34,.3);}
+.new-btn:hover{background:var(--amber2);}
+.sync-btn{background:var(--bg3);border:1px solid var(--border);cursor:pointer;padding:7px 13px;border-radius:7px;font-size:12px;color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px;}
+.sync-btn:hover{background:var(--bg4);}
+.sync-btn.syncing{color:var(--amber);border-color:var(--amber);}
+.alert-pill{background:var(--terra-lt);border:1px solid #f0b8ae;color:var(--terra);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;font-family:var(--mono);animation:soft-pulse 3s infinite;}
+@keyframes soft-pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.sync-status{font-family:var(--mono);font-size:10px;color:var(--text3);display:flex;align-items:center;gap:4px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+.sync-dot.err{background:var(--terra);}
+.sync-dot.pending{background:var(--yellow);animation:soft-pulse 1.5s infinite;}
+
+/* BANNER */
+.notif-banner{background:var(--terra-lt);border-bottom:1px solid #f0b8ae;padding:8px 28px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--terra);flex-shrink:0;}
+
+/* SETUP BANNER */
+.setup-banner{background:var(--amber-lt);border-bottom:1px solid #e8c97a;padding:9px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--amber2);flex-shrink:0;}
+.setup-banner a{color:var(--amber);font-weight:600;cursor:pointer;text-decoration:underline;}
+
+/* MAIN */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.view{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.view.active{display:flex;}
+.detail-view{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.detail-view.active{display:flex;}
+
+/* SCROLLABLE CONTENT */
+.dash-scroll{overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:24px;}
+.section-title{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;margin-bottom:12px;}
+
+/* STAT CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow);transition:box-shadow .2s,transform .2s;}
+.stat-card:hover{box-shadow:var(--shadow2);transform:translateY(-1px);}
+.stat-dot{width:9px;height:9px;border-radius:50%;margin-bottom:10px;}
+.stat-label{font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;}
+.stat-value{font-family:var(--serif);font-size:34px;color:var(--text);line-height:1;margin:4px 0 2px;}
+.stat-sub{font-size:11px;color:var(--text2);}
+.stat-bar{height:3px;background:var(--bg3);border-radius:2px;margin-top:10px;overflow:hidden;}
+.stat-bar-fill{height:100%;border-radius:2px;transition:width .8s ease;}
+.health-row{display:grid;grid-template-columns:repeat(3,1fr) repeat(3,1fr);gap:12px;}
+.health-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);}
+.h-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.h-count{font-family:var(--serif);font-size:28px;line-height:1;}
+.h-name{font-size:11px;color:var(--text2);margin-top:2px;}
+
+/* ALERTS */
+.alert-list{display:flex;flex-direction:column;gap:8px;}
+.alert-item{background:#fff;border:1px solid var(--border);border-radius:9px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
+.alert-item:hover{box-shadow:var(--shadow2);border-color:var(--border2);}
+.alert-stripe{width:4px;align-self:stretch;border-radius:2px;flex-shrink:0;}
+.alert-text{flex:1;font-size:12px;color:var(--text2);line-height:1.5;}
+.alert-text strong{color:var(--text);font-family:var(--mono);font-size:11px;}
+.alert-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.alert-tag{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;letter-spacing:.06em;}
+.notify-trigger-btn{background:var(--terra-lt);border:1px solid #f0b8ae;color:var(--terra);border-radius:5px;padding:5px 11px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap;}
+.notify-trigger-btn:hover{background:#fdd8d3;}
+
+/* KANBAN */
+.kanban-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.kanban-header{padding:18px 28px 0;display:flex;align-items:center;justify-content:space-between;}
+.kanban-board{flex:1;overflow-x:auto;padding:16px 28px;display:flex;gap:14px;}
+.kanban-col{flex:0 0 272px;display:flex;flex-direction:column;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+.col-top-stripe{height:4px;}
+.col-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.col-name-wrap{display:flex;align-items:center;gap:8px;}
+.col-dot{width:9px;height:9px;border-radius:50%;}
+.col-name{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;}
+.col-sublabel{font-size:10px;color:var(--text3);}
+.col-count{background:var(--bg2);border:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--text2);padding:2px 9px;border-radius:10px;}
+.col-cards{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
+.empty-col{padding:24px 12px;text-align:center;color:var(--text3);font-size:11px;font-family:var(--mono);}
+
+/* PCO CARD */
+.pco-card{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:13px 13px 11px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;}
+.pco-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.pco-card:hover{background:#fff;border-color:var(--border2);box-shadow:var(--shadow2);transform:translateY(-1px);}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;}
+.card-id{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.priority-badge{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.04em;flex-shrink:0;}
+.card-title{font-size:12px;color:var(--text);font-weight:500;line-height:1.45;margin-bottom:10px;}
+.card-footer{display:flex;align-items:center;justify-content:space-between;}
+.days-chip{padding:3px 7px;border-radius:4px;font-size:10px;font-family:var(--mono);}
+.card-owner-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0;}
+.card-deadline{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:7px;padding-top:7px;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;}
+.card-deadline.dl-overdue{color:var(--terra);}
+.card-deadline.dl-soon{color:var(--yellow);}
+
+/* PRIORITY */
+.pri-critical{background:var(--terra-lt);color:var(--terra);border:1px solid #f0b8ae;}
+.pri-high{background:var(--yell-lt);color:var(--yellow);border:1px solid #e8d090;}
+.pri-medium{background:var(--blue-lt);color:var(--blue);border:1px solid #aec8e0;}
+.pri-low{background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
+
+/* STAGE ACCENTS */
+.acc-ltdinv::after{background:#2e6fa3;}.acc-ltdprod::after{background:#7755aa;}
+.acc-ltdpur::after{background:#c47c22;}.acc-ltdacct::after{background:#3a7d52;}
+.acc-ltdrelz::after{background:#c0503a;}
+
+/* FILTER */
+.filter-bar{display:flex;gap:6px;align-items:center;}
+.filter-chip{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 13px;font-family:var(--mono);font-size:10px;color:var(--text2);cursor:pointer;transition:all .15s;letter-spacing:.04em;}
+.filter-chip:hover{border-color:var(--border2);color:var(--text);}
+.filter-chip.active{background:var(--amber);border-color:var(--amber);color:white;}
+
+/* DETAIL */
+.detail-scroll{flex:1;overflow-y:auto;padding:24px 28px;}
+.detail-back{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:20px;padding:6px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;transition:all .15s;}
+.detail-back:hover{background:var(--bg3);}
+.detail-top{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin-bottom:20px;box-shadow:var(--shadow);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+.detail-id{font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:6px;}
+.detail-title{font-family:var(--serif);font-size:22px;color:var(--text);margin-bottom:12px;line-height:1.3;}
+.detail-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.meta-chip{background:var(--bg2);border:1px solid var(--border);padding:4px 11px;border-radius:6px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;}
+.meta-dot{width:6px;height:6px;border-radius:50%;}
+.detail-actions{display:flex;gap:8px;flex-shrink:0;}
+.advance-btn{background:var(--green);border:none;cursor:pointer;padding:9px 18px;border-radius:8px;font-family:var(--sans);font-size:12px;font-weight:600;color:white;white-space:nowrap;transition:all .15s;box-shadow:0 2px 6px rgba(58,125,82,.3);}
+.advance-btn:hover{background:#2d6642;}
+
+/* TIMELINE */
+.tl-wrap{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin-bottom:20px;box-shadow:var(--shadow);}
+.timeline{display:flex;align-items:flex-start;position:relative;}
+.timeline::before{content:'';position:absolute;top:20px;left:20px;right:20px;height:2px;background:var(--bg3);}
+.tl-stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;z-index:1;}
+.tl-node{width:40px;height:40px;border-radius:50%;border:2px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .25s;font-weight:600;}
+.tl-node.completed{background:var(--green);border-color:var(--green);color:white;}
+.tl-node.in-progress{background:var(--amber);border-color:var(--amber);color:white;box-shadow:0 0 0 5px rgba(196,124,34,.15);}
+.tl-node.blocked{background:var(--terra);border-color:var(--terra);color:white;}
+.tl-node.pending{background:var(--bg2);border-color:var(--border);color:var(--text3);}
+.tl-name{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.08em;color:var(--text3);text-align:center;}
+.tl-status{font-size:9px;text-align:center;font-weight:500;}
+
+/* STAGE CARDS */
+.stages-grid{display:flex;flex-direction:column;gap:10px;}
+.stage-card{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+.stage-card-hdr{padding:13px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid transparent;transition:all .15s;background:#fff;}
+.stage-card-hdr:hover{background:var(--bg);}
+.stage-card.expanded .stage-card-hdr{border-bottom-color:var(--border);}
+.shdr-left{display:flex;align-items:center;gap:10px;}
+.stage-badge{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;letter-spacing:.06em;}
+.b-completed{background:var(--green-lt);color:var(--green);border:1px solid #a0d8b4;}
+.b-in-progress{background:var(--amber-lt);color:var(--amber2);border:1px solid #e8c97a;}
+.b-blocked{background:var(--terra-lt);color:var(--terra);border:1px solid #f0b8ae;}
+.b-pending{background:var(--bg2);color:var(--text3);border:1px solid var(--border);}
+.stage-name-lbl{font-family:var(--mono);font-size:12px;font-weight:500;}
+.stage-sublbl{font-size:11px;color:var(--text2);}
+.shdr-right{display:flex;align-items:center;gap:10px;}
+.stage-time{font-family:var(--mono);font-size:11px;color:var(--text3);}
+.owner-chip{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);padding:4px 10px;border-radius:6px;font-size:11px;color:var(--text2);}
+.owner-av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white;}
+.chevron{color:var(--text3);font-size:11px;transition:transform .2s;}
+.stage-card.expanded .chevron{transform:rotate(180deg);}
+.complete-stage-btn{background:var(--green);border:none;cursor:pointer;padding:6px 12px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:600;color:white;transition:all .15s;white-space:nowrap;}
+.complete-stage-btn:hover{background:#2d6642;}
+.release-stage-btn{background:var(--amber);border:none;cursor:pointer;padding:6px 12px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:600;color:white;transition:all .15s;white-space:nowrap;}
+.release-stage-btn:hover{background:var(--amber2);}
+
+/* DEADLINE ROW */
+.dl-row{display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.dl-label{font-size:11px;color:var(--text2);font-weight:500;white-space:nowrap;}
+.dl-input{background:#fff;border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;}
+.dl-input:focus{border-color:var(--amber);}
+.dl-status{font-family:var(--mono);font-size:10px;font-weight:500;}
+.pa-notify-btn{background:var(--terra-lt);border:1px solid #f0b8ae;color:var(--terra);border-radius:5px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s;margin-left:auto;display:flex;align-items:center;gap:5px;}
+.pa-notify-btn:hover{background:#fdd8d3;}
+
+/* COMMENTS */
+.stage-body{padding:16px 18px;}
+.comments-list{display:flex;flex-direction:column;gap:12px;}
+.comment{display:flex;gap:10px;}
+.c-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0;margin-top:1px;}
+.c-body{flex:1;}
+.c-meta{display:flex;gap:8px;align-items:center;margin-bottom:3px;}
+.c-author{font-size:12px;font-weight:600;color:var(--text);}
+.c-date{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.c-text{font-size:12px;color:var(--text2);line-height:1.55;}
+.c-input-row{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.c-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:var(--sans);font-size:12px;color:var(--text);outline:none;transition:border-color .15s;}
+.c-input:focus{border-color:var(--amber);}
+.c-submit{background:var(--amber);border:none;cursor:pointer;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;color:white;transition:background .15s;}
+.c-submit:hover{background:var(--amber2);}
+
+/* RELEASED BANNER */
+.released-banner{background:var(--green-lt);border:1px solid #a0d8b4;border-radius:10px;padding:20px 26px;margin-bottom:20px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);}
+.released-icon{font-size:32px;}
+.released-title{font-family:var(--serif);font-size:18px;color:var(--green);margin-bottom:3px;}
+.released-sub{font-size:12px;color:var(--text2);}
+
+/* SETTINGS PAGE */
+.settings-wrap{overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:20px;max-width:700px;}
+.settings-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:22px 24px;box-shadow:var(--shadow);}
+.settings-card-title{font-family:var(--serif);font-size:16px;color:var(--text);margin-bottom:4px;}
+.settings-card-sub{font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.5;}
+.step-list{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+.step{display:flex;gap:10px;align-items:flex-start;}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--amber);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-text{font-size:12px;color:var(--text2);line-height:1.55;}
+.step-text a{color:var(--amber);text-decoration:none;font-weight:600;}
+.step-text a:hover{text-decoration:underline;}
+.step-text code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:11px;color:var(--text);}
+.form-row{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.form-label{font-size:11px;color:var(--text2);font-weight:500;}
+.form-input{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;transition:border-color .15s;width:100%;}
+.form-input:focus{border-color:var(--amber);}
+.form-input.ok{border-color:var(--green);}
+.form-input.err{border-color:var(--terra);}
+.save-settings-btn{background:var(--amber);border:none;cursor:pointer;padding:9px 22px;border-radius:7px;font-size:13px;font-weight:600;color:white;transition:all .15s;box-shadow:0 2px 6px rgba(196,124,34,.3);}
+.save-settings-btn:hover{background:var(--amber2);}
+.test-btn{background:var(--bg2);border:1px solid var(--border);cursor:pointer;padding:8px 16px;border-radius:7px;font-size:12px;color:var(--text2);transition:all .15s;font-family:var(--sans);}
+.test-btn:hover{background:var(--bg3);}
+.settings-status{font-size:11px;margin-top:8px;font-family:var(--mono);}
+.connected-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-lt);border:1px solid #a0d8b4;color:var(--green);padding:3px 9px;border-radius:12px;font-size:10px;font-weight:600;font-family:var(--mono);}
+.disconnected-badge{display:inline-flex;align-items:center;gap:5px;background:var(--terra-lt);border:1px solid #f0b8ae;color:var(--terra);padding:3px 9px;border-radius:12px;font-size:10px;font-weight:600;font-family:var(--mono);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(44,36,22,.35);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:100;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border:1px solid var(--border2);border-radius:14px;padding:28px;width:500px;box-shadow:0 20px 60px rgba(44,36,22,.2);}
+.modal-title{font-family:var(--serif);font-size:20px;color:var(--text);margin-bottom:20px;}
+.form-row-modal{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.form-label-modal{font-size:11px;color:var(--text2);font-weight:500;}
+.form-input-modal,.form-select-modal{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none;transition:border-color .15s;width:100%;}
+.form-input-modal:focus,.form-select-modal:focus{border-color:var(--amber);}
+.form-select-modal{appearance:none;cursor:pointer;}
+.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:22px;}
+.btn-cancel{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:9px 18px;font-size:13px;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all .15s;}
+.btn-cancel:hover{background:var(--bg3);}
+.btn-create{background:var(--amber);border:none;cursor:pointer;padding:9px 22px;border-radius:7px;font-size:13px;font-weight:600;color:white;box-shadow:0 2px 6px rgba(196,124,34,.35);transition:all .15s;}
+.btn-create:hover{background:var(--amber2);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;border-radius:9px;padding:12px 18px;font-size:13px;box-shadow:var(--shadow2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:200;max-width:360px;line-height:1.4;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* USERS */
+.users-scroll{overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px;}
+
+/* SCROLLBARS */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">PCO<em>.</em>Track</div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="showView('dashboard')">Dashboard</button>
+      <button class="nav-btn" onclick="showView('kanban')">Kanban</button>
+      <button class="nav-btn" onclick="showView('users')">Users</button>
+      <button class="nav-btn" onclick="showView('settings')">⚙ Settings</button>
+    </nav>
+  </div>
+  <div class="header-right">
+    <div class="sync-status" id="syncStatus"><div class="sync-dot pending" id="syncDot"></div><span id="syncLabel">Not configured</span></div>
+    <button class="sync-btn" id="syncBtn" onclick="syncNow()" title="Sync with GitHub">↻ Sync</button>
+    <div class="alert-pill" id="alertPill">⚠ 0 Alerts</div>
+    <button class="new-btn" onclick="openModal()">+ New PCO</button>
+  </div>
+</header>
+
+<!-- SETUP BANNER (shown when not configured) -->
+<div class="setup-banner" id="setupBanner">
+  ⚙ GitHub & Power Automate not configured — data is local only. <a onclick="showView('settings')">Open Settings to connect →</a>
+</div>
+
+<!-- ALERT BANNER -->
+<div class="notif-banner" id="notifBanner" style="display:none">⚠ <span id="notifText"></span></div>
+
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="view active" id="view-dashboard">
+    <div class="dash-scroll">
+      <div><div class="section-title">Stage Pipeline</div><div class="stat-row" id="stageStats"></div></div>
+      <div><div class="section-title">Health Overview</div><div class="health-row" id="healthStats"></div></div>
+      <div><div class="section-title">Alerts &amp; Notifications</div><div class="alert-list" id="alertList"></div></div>
+    </div>
+  </div>
+
+  <!-- KANBAN -->
+  <div class="view" id="view-kanban">
+    <div class="kanban-wrap">
+      <div class="kanban-header">
+        <div class="section-title" style="margin:0">Production Change Orders</div>
+        <div class="filter-bar">
+          <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">FILTER:</span>
+          <button class="filter-chip active" onclick="setFilter('all',this)">ALL</button>
+          <button class="filter-chip" onclick="setFilter('CRITICAL',this)">CRITICAL</button>
+          <button class="filter-chip" onclick="setFilter('HIGH',this)">HIGH</button>
+          <button class="filter-chip" onclick="setFilter('delayed',this)">DELAYED</button>
+          <button class="filter-chip" onclick="setFilter('blocked',this)">BLOCKED</button>
+        </div>
+      </div>
+      <div class="kanban-board" id="kanbanBoard"></div>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="view" id="view-users">
+    <div class="users-scroll">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="section-title" style="margin:0">Team Members</div>
+        <button class="new-btn" onclick="openUserModal()" style="padding:6px 14px;font-size:12px">+ Add User</button>
+      </div>
+      <div id="userGrid"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <div class="settings-wrap">
+
+      <!-- GITHUB SETUP -->
+      <div class="settings-card">
+        <div class="settings-card-title">🐙 GitHub — Shared Database</div>
+        <div class="settings-card-sub">PCO data is stored as a JSON file in a GitHub repo. All users read and write to the same file, so everyone stays in sync in real time.</div>
+        <div class="step-list">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://github.com/new" target="_blank">github.com/new</a> and create a <strong>private repo</strong> (e.g. <code>pco-tracker-data</code>). Initialize it with a README.</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Go to <a href="https://github.com/settings/tokens/new" target="_blank">GitHub → Settings → Developer Settings → Personal Access Tokens → Tokens (classic)</a>. Generate a token with the <code>repo</code> scope. Copy it.</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Paste your details below and click <strong>Save & Test</strong>. The app will create a <code>pco-data.json</code> file in your repo automatically.</div></div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">GitHub Username</label>
+          <input class="form-input" id="ghUser" placeholder="e.g. yourcompany">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Repository Name</label>
+          <input class="form-input" id="ghRepo" placeholder="e.g. pco-tracker-data">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Personal Access Token</label>
+          <input class="form-input" id="ghToken" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="save-settings-btn" onclick="saveGitHub()">Save &amp; Test Connection</button>
+          <div class="settings-status" id="ghStatus"></div>
+        </div>
+      </div>
+
+      <!-- HOSTING NOTE -->
+      <div class="settings-card">
+        <div class="settings-card-title">🌐 Host the App (Required for Team Sharing)</div>
+        <div class="settings-card-sub">Browsers block API calls from local files. To share with your team and make GitHub sync work, you need to host this HTML file on GitHub Pages — it's free and takes 3 minutes.</div>
+        <div class="step-list">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to your <strong>pco-tracker-data</strong> repo on GitHub → click <strong>Add file → Upload files</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Upload this <code>pco-tracker.html</code> file → rename it to <code>index.html</code> → commit it</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Go to repo <strong>Settings → Pages</strong> (left sidebar) → under Source select <strong>Deploy from branch → main → / (root)</strong> → click Save</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Wait 1–2 minutes → your app will be live at <strong>https://sameerpatel9.github.io/pco-tracker-data/</strong> — share that URL with your team</div></div>
+        </div>
+        <div style="background:var(--amber-lt);border:1px solid #e8c97a;border-radius:8px;padding:12px 16px;font-size:12px;color:var(--amber2)">
+          ⚠ Since this repo is <strong>Private</strong>, GitHub Pages won't work on the free plan. Either make the repo <strong>Public</strong> (the HTML file has no sensitive data — your token is only stored in your browser), or upgrade to GitHub Pro ($4/month).
+          <br><br>
+          <strong>Recommended:</strong> Make the repo public. The PCO data will be readable by anyone with the URL, but since it's internal operational data, this is usually acceptable. The GitHub token stays private in each user's browser.
+        </div>
+      </div>
+
+      <!-- POWER AUTOMATE SETUP -->
+      <div class="settings-card">
+        <div class="settings-card-title">⚡ Power Automate — Automatic Email Notifications</div>
+        <div class="settings-card-sub">When a PCO stage deadline is missed, the app calls a Power Automate flow that sends an Outlook email to the owner automatically — no one needs to click anything.</div>
+        <div class="step-list">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://make.powerautomate.com" target="_blank">make.powerautomate.com</a> → <strong>+ Create → Instant cloud flow</strong>.</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Choose <strong>"When an HTTP request is received"</strong> as the trigger. Set Method to <code>POST</code>. Use this JSON schema for the body:<br><br>
+            <code style="display:block;background:var(--bg3);padding:8px;border-radius:5px;margin-top:6px;font-size:10px;line-height:1.6">{"type":"object","properties":{"toEmail":{"type":"string"},"ownerName":{"type":"string"},"pcoId":{"type":"string"},"pcoTitle":{"type":"string"},"stage":{"type":"string"},"deadline":{"type":"string"},"daysOverdue":{"type":"integer"}}}</code>
+          </div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Add an action: <strong>Send an email (V2)</strong> (Outlook). Set <strong>To</strong> = <code>toEmail</code>, <strong>Subject</strong> = <code>[ACTION REQUIRED] PCO pcoId Overdue at stage</code>, and fill the body with the dynamic fields.</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Save the flow. Copy the <strong>HTTP POST URL</strong> shown in the trigger step and paste it below.</div></div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Power Automate HTTP Trigger URL</label>
+          <input class="form-input" id="paUrl" placeholder="https://prod-xx.westus.logic.azure.com:443/workflows/...">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="save-settings-btn" onclick="savePowerAutomate()">Save URL</button>
+          <button class="test-btn" onclick="testPowerAutomate()">Send Test Email</button>
+          <div class="settings-status" id="paStatus"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="detail-view" id="view-detail">
+    <div class="detail-scroll" id="detailContent"></div>
+  </div>
+
+</div>
+</div>
+
+<!-- NEW PCO MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">New Production Change Order</div>
+    <div class="form-2col" style="margin-bottom:14px">
+      <div class="form-row-modal">
+        <label class="form-label-modal">PCO # <span style="color:var(--text3);font-weight:400">(auto if blank)</span></label>
+        <input class="form-input-modal" id="newPcoNum" placeholder="e.g. PCO-0099">
+      </div>
+      <div class="form-row-modal">
+        <label class="form-label-modal">Priority</label>
+        <select class="form-select-modal" id="newPriority">
+          <option value="LOW">Low</option>
+          <option value="MEDIUM" selected>Medium</option>
+          <option value="HIGH">High</option>
+          <option value="CRITICAL">Critical</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row-modal">
+      <label class="form-label-modal">Title *</label>
+      <input class="form-input-modal" id="newTitle" placeholder="e.g. Update BOM for Assembly Line 3">
+    </div>
+    <div class="form-2col">
+      <div class="form-row-modal" style="margin:0">
+        <label class="form-label-modal">Deadline for LTDINV</label>
+        <input class="form-input-modal" id="newDeadline" type="date">
+      </div>
+      <div class="form-row-modal" style="margin:0">
+        <label class="form-label-modal">LTDINV Owner</label>
+        <select class="form-select-modal" id="newOwner"></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-create" onclick="createPCO()">Create PCO</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-overlay" id="userModalOverlay">
+  <div class="modal" style="width:420px">
+    <div class="modal-title">Add Team Member</div>
+    <div class="form-row-modal">
+      <label class="form-label-modal">Full Name *</label>
+      <input class="form-input-modal" id="uName" placeholder="e.g. John Smith">
+    </div>
+    <div class="form-row-modal">
+      <label class="form-label-modal">Outlook Email *</label>
+      <input class="form-input-modal" id="uEmail" type="email" placeholder="e.g. john.smith@company.com">
+    </div>
+    <div class="form-2col">
+      <div class="form-row-modal" style="margin:0">
+        <label class="form-label-modal">Role</label>
+        <select class="form-select-modal" id="uRole">
+          <option>Inventory Lead</option><option>Inventory Analyst</option>
+          <option>Production Manager</option><option>Purchasing Lead</option>
+          <option>Accounting Lead</option><option>Release Manager</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-row-modal" style="margin:0">
+        <label class="form-label-modal">Default Stage</label>
+        <select class="form-select-modal" id="uStage">
+          <option value="LTDINV">LTDINV</option><option value="LTDPROD">LTDPROD</option>
+          <option value="LTDPUR">LTDPUR</option><option value="LTDACCT">LTDACCT</option>
+          <option value="LTDRELZ">LTDRELZ</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeUserModal()">Cancel</button>
+      <button class="btn-create" onclick="saveUser()">Add User</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteModalOverlay">
+  <div class="modal" style="width:360px;text-align:center">
+    <div style="font-size:36px;margin-bottom:12px">🗑️</div>
+    <div class="modal-title" style="text-align:center;margin-bottom:8px">Delete PCO?</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:22px" id="deleteModalMsg"></div>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-create" style="background:var(--terra)" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+const STAGES = ['LTDINV','LTDPROD','LTDPUR','LTDACCT','LTDRELZ'];
+const STAGE_LABELS = {LTDINV:'Inv. Review',LTDPROD:'Production',LTDPUR:'Purchasing',LTDACCT:'Accounting',LTDRELZ:'Release'};
+const STAGE_SLA = {LTDINV:3,LTDPROD:5,LTDPUR:4,LTDACCT:3,LTDRELZ:2};
+const STAGE_HEX = {LTDINV:'#2e6fa3',LTDPROD:'#7755aa',LTDPUR:'#c47c22',LTDACCT:'#3a7d52',LTDRELZ:'#c0503a'};
+const AVATAR_COLORS = ['#2e6fa3','#7755aa','#c47c22','#3a7d52','#c0503a','#8b5e3c','#4a7c8a','#b5632a','#6b4c9a','#2d7a4f'];
+const GH_FILE = 'pco-data.json';
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let pcos = [], users = [];
+let userColorIdx = 0, pcoCounter = 1, pendingDeleteId = null;
+let activeFilter = 'all';
+let cfg = { ghUser:'', ghRepo:'', ghToken:'', paUrl:'' }; // loaded from localStorage
+let ghFileSha = null; // needed for GitHub PUT updates
+let syncPending = false;
+
+// ── PERSIST CONFIG IN LOCALSTORAGE (credentials only, not PCO data) ───────────
+function loadConfig(){
+  try { const c = JSON.parse(localStorage.getItem('pco_cfg')||'{}'); Object.assign(cfg, c); } catch(e){}
+  if(cfg.ghUser) document.getElementById('ghUser').value = cfg.ghUser;
+  if(cfg.ghRepo) document.getElementById('ghRepo').value = cfg.ghRepo;
+  if(cfg.ghToken) document.getElementById('ghToken').value = cfg.ghToken;
+  if(cfg.paUrl)  document.getElementById('paUrl').value  = cfg.paUrl;
+  updateSetupBanner();
+}
+function saveConfig(){
+  localStorage.setItem('pco_cfg', JSON.stringify(cfg));
+}
+
+function updateSetupBanner(){
+  const configured = cfg.ghUser && cfg.ghRepo && cfg.ghToken;
+  document.getElementById('setupBanner').style.display = configured ? 'none' : 'flex';
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if(configured){ dot.className='sync-dot'; lbl.textContent='GitHub connected'; }
+  else { dot.className='sync-dot pending'; lbl.textContent='Not configured'; }
+}
+
+// ── GITHUB SYNC ───────────────────────────────────────────────────────────────
+function ghHeaders(){
+  return { 'Authorization': `token ${cfg.ghToken}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' };
+}
+function ghApiUrl(){ return `https://api.github.com/repos/${cfg.ghUser}/${cfg.ghRepo}/contents/${GH_FILE}`; }
+
+async function ghLoad(){
+  setSyncState('syncing','Syncing…');
+  try {
+    const r = await fetch(ghApiUrl(), { headers: ghHeaders() });
+    if(r.status === 404){
+      // File doesn't exist yet — init empty
+      ghFileSha = null;
+      await ghSave();
+      setSyncState('ok','Synced');
+      return;
+    }
+    if(r.status===401) throw new Error('Token invalid — generate a new one');
+    if(r.status===403) throw new Error('Token missing repo scope');
+    if(!r.ok) throw new Error('GitHub error '+r.status);
+    const j = await r.json();
+    ghFileSha = j.sha;
+    const raw = atob(j.content.replace(/\n/g,''));
+    const data = JSON.parse(raw);
+    pcos = data.pcos || [];
+    users = data.users || [];
+    userColorIdx = data.userColorIdx || 0;
+    pcoCounter = data.pcoCounter || 1;
+    setSyncState('ok','Synced just now');
+    renderAll();
+  } catch(e){
+    setSyncState('err','Sync failed');
+    showToast('⚠ GitHub sync failed: '+e.message);
+  }
+}
+
+async function ghSave(){
+  if(!cfg.ghUser || !cfg.ghRepo || !cfg.ghToken) return; // not configured
+  setSyncState('syncing','Saving…');
+  const payload = { pcos, users, userColorIdx, pcoCounter };
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+  const body = { message: `PCO update ${new Date().toISOString()}`, content };
+  if(ghFileSha) body.sha = ghFileSha;
+  try {
+    const r = await fetch(ghApiUrl(), { method:'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
+    if(!r.ok){ const e=await r.json(); throw new Error(e.message||r.status); }
+    const j = await r.json();
+    ghFileSha = j.content.sha;
+    setSyncState('ok','Saved '+new Date().toLocaleTimeString());
+  } catch(e){
+    setSyncState('err','Save failed');
+    showToast('⚠ GitHub save failed: '+e.message);
+  }
+}
+
+function setSyncState(state, label){
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  lbl.textContent = label;
+  dot.className = 'sync-dot' + (state==='err'?' err':state==='syncing'?' pending':'');
+}
+
+async function syncNow(){
+  if(!cfg.ghUser||!cfg.ghRepo||!cfg.ghToken){ showView('settings'); showToast('⚙ Configure GitHub first'); return; }
+  await ghLoad();
+}
+
+// ── POWER AUTOMATE EMAIL ───────────────────────────────────────────────────────
+async function sendPANotification(pco, stageName){
+  if(!cfg.paUrl){ showToast('⚡ Power Automate not configured — go to Settings'); return; }
+  const stage = pco.stages[stageName];
+  const ownerUser = users.find(u=>u.name===stage.owner);
+  if(!ownerUser){ showToast('⚠ No email found for '+stage.owner); return; }
+  const daysOverdue = stage.deadline ? Math.abs(Math.ceil((new Date(stage.deadline)-Date.now())/86400000)) : getStageDays(pco);
+  const payload = {
+    toEmail: ownerUser.email,
+    ownerName: ownerUser.name,
+    pcoId: pco.id,
+    pcoTitle: pco.title,
+    stage: stageName,
+    stageLabel: STAGE_LABELS[stageName],
+    deadline: stage.deadline||'Not set',
+    daysOverdue,
+    priority: pco.priority
+  };
+  try {
+    // Power Automate HTTP trigger requires no-cors or a CORS-enabled flow
+    await fetch(cfg.paUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    showToast(`📧 Notification sent to ${ownerUser.name} (${ownerUser.email})`);
+  } catch(e){
+    showToast('⚠ Failed to reach Power Automate: '+e.message);
+  }
+}
+
+// Auto-check overdue and fire PA notifications (runs every 5 min)
+let notifiedIds = new Set();
+function checkAndNotify(){
+  pcos.forEach(p=>{
+    if(p.released) return;
+    const key = p.id+'_'+p.currentStage;
+    if(notifiedIds.has(key)) return;
+    if(isDelayed(p)){
+      notifiedIds.add(key);
+      sendPANotification(p, p.currentStage);
+    }
+  });
+}
+setInterval(checkAndNotify, 5*60*1000);
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const daysFromNow = n => { const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10); };
+const daysIn = iso => iso?Math.floor((Date.now()-new Date(iso).getTime())/86400000):0;
+const daysUntil = s => s?Math.ceil((new Date(s).getTime()-Date.now())/86400000):null;
+const initials = name => name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+const priCls = p => ({CRITICAL:'pri-critical',HIGH:'pri-high',MEDIUM:'pri-medium',LOW:'pri-low'}[p]||'pri-low');
+const badgeCls = s => ({'completed':'b-completed','in-progress':'b-in-progress','blocked':'b-blocked','pending':'b-pending'}[s]||'b-pending');
+const getUserColor = name => (users.find(u=>u.name===name)||{}).color||'#8b8070';
+const getStageDays = pco => { const s=pco.stages[pco.currentStage]; return s?.startedAt?daysIn(s.startedAt):0; };
+function isDelayed(pco){ if(pco.released)return false; const s=pco.stages[pco.currentStage]; if(s?.deadline)return daysUntil(s.deadline)<0; return daysIn(s?.startedAt)>STAGE_SLA[pco.currentStage]; }
+function isAtRisk(pco){ if(pco.released||isDelayed(pco))return false; const s=pco.stages[pco.currentStage]; if(s?.deadline)return daysUntil(s.deadline)<=1; return daysIn(s?.startedAt)>=STAGE_SLA[pco.currentStage]-1; }
+function isBlocked(pco){ if(pco.released)return false; return Object.values(pco.stages).some(s=>s.status==='blocked'); }
+
+// ── VIEWS ─────────────────────────────────────────────────────────────────────
+function showView(v){
+  document.querySelectorAll('.view,.detail-view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(v==='detail'){ document.getElementById('view-detail').classList.add('active'); return; }
+  document.getElementById('view-'+v).classList.add('active');
+  const navIdx={dashboard:0,kanban:1,users:2,settings:3}[v]??0;
+  document.querySelectorAll('.nav-btn')[navIdx].classList.add('active');
+  if(v==='dashboard') renderDashboard();
+  if(v==='kanban') renderKanban();
+  if(v==='users') renderUsers();
+}
+
+function renderAll(){ renderDashboard(); renderKanban(); }
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  const cnt={};STAGES.forEach(s=>cnt[s]=0);pcos.forEach(p=>cnt[p.currentStage]=(cnt[p.currentStage]||0)+1);
+  const total=pcos.length;
+  document.getElementById('stageStats').innerHTML=STAGES.map(s=>`
+    <div class="stat-card">
+      <div class="stat-dot" style="background:${STAGE_HEX[s]}"></div>
+      <div class="stat-label">${s}</div>
+      <div class="stat-value">${cnt[s]||0}</div>
+      <div class="stat-sub">${STAGE_LABELS[s]}</div>
+      <div class="stat-bar"><div class="stat-bar-fill" style="width:${total?Math.round((cnt[s]||0)/total*100):0}%;background:${STAGE_HEX[s]}"></div></div>
+    </div>`).join('');
+
+  const delayed=pcos.filter(isDelayed).length;
+  const atRisk=pcos.filter(p=>!isDelayed(p)&&isAtRisk(p)).length;
+  const blocked=pcos.filter(isBlocked).length;
+  const onTrack=pcos.filter(p=>!isDelayed(p)&&!isAtRisk(p)&&!isBlocked(p)).length;
+  const released=pcos.filter(p=>p.released).length;
+  document.getElementById('healthStats').innerHTML=`
+    <div class="health-card"><div class="h-icon" style="background:var(--terra-lt)">🔴</div><div><div class="h-count" style="color:var(--terra)">${delayed}</div><div class="h-name">Delayed</div></div></div>
+    <div class="health-card"><div class="h-icon" style="background:var(--yell-lt)">⚡</div><div><div class="h-count" style="color:var(--yellow)">${atRisk}</div><div class="h-name">At Risk</div></div></div>
+    <div class="health-card"><div class="h-icon" style="background:var(--green-lt)">✅</div><div><div class="h-count" style="color:var(--green)">${onTrack}</div><div class="h-name">On Track</div></div></div>
+    <div class="health-card"><div class="h-icon" style="background:var(--purp-lt)">🚫</div><div><div class="h-count" style="color:var(--purple)">${blocked}</div><div class="h-name">Blocked</div></div></div>
+    <div class="health-card"><div class="h-icon" style="background:var(--blue-lt)">📋</div><div><div class="h-count" style="color:var(--blue)">${total}</div><div class="h-name">Total</div></div></div>
+    <div class="health-card"><div class="h-icon" style="background:var(--green-lt)">🏁</div><div><div class="h-count" style="color:var(--green)">${released}</div><div class="h-name">Released</div></div></div>`;
+
+  const alerts=buildAlerts();
+  const ac=alerts.length;
+  document.getElementById('alertPill').textContent=ac?`⚠ ${ac} Alert${ac>1?'s':''}`:'✓ All Clear';
+  document.getElementById('alertPill').style.cssText=ac?'background:var(--terra-lt);color:var(--terra);border-color:#f0b8ae;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;font-family:var(--mono)':'background:var(--green-lt);color:var(--green);border-color:#a0d8b4;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;font-family:var(--mono)';
+  const nb=document.getElementById('notifBanner');
+  if(ac){ nb.style.display='flex'; document.getElementById('notifText').textContent=`${ac} PCO${ac>1?'s require':'requires'} attention`; }
+  else nb.style.display='none';
+
+  document.getElementById('alertList').innerHTML=alerts.length
+    ? alerts.map(a=>`
+        <div class="alert-item" onclick="openDetail('${a.pid}')">
+          <div class="alert-stripe" style="background:${a.color}"></div>
+          <div class="alert-text">${a.text}</div>
+          <div class="alert-actions">
+            <span class="alert-tag" style="background:${a.tagBg};color:${a.color};border:1px solid ${a.tagBd}">${a.tag}</span>
+            ${a.canNotify?`<button class="notify-trigger-btn" onclick="event.stopPropagation();sendPANotification(pcos.find(p=>p.id==='${a.pid}'),'${a.stage}')">✉ Notify via Outlook</button>`:''}
+          </div>
+        </div>`).join('')
+    : `<div style="padding:24px;text-align:center;color:var(--text3);font-size:12px;font-family:var(--mono)">No alerts — all PCOs are on track</div>`;
+}
+
+function buildAlerts(){
+  const out=[];
+  pcos.forEach(p=>{
+    if(p.released) return;
+    const s=p.stages[p.currentStage];
+    const dl=s?.deadline;
+    const dOver=dl?Math.abs(daysUntil(dl)):getStageDays(p);
+    if(isDelayed(p)) out.push({pid:p.id,stage:p.currentStage,color:'var(--terra)',tag:'OVERDUE',tagBg:'var(--terra-lt)',tagBd:'#f0b8ae',canNotify:true,text:`<strong>${p.id}</strong> — "${p.title}" is <strong>${dOver}d overdue</strong> at ${p.currentStage}. Owner: ${s?.owner||''}`});
+    if(isBlocked(p)) STAGES.forEach(st=>{ if(p.stages[st].status==='blocked') out.push({pid:p.id,stage:st,color:'var(--purple)',tag:'BLOCKED',tagBg:'var(--purp-lt)',tagBd:'#c8aae8',canNotify:false,text:`<strong>${p.id}</strong> — Stage <strong>${st}</strong> is blocked. Owner: ${p.stages[st].owner}`}); });
+    if(!isDelayed(p)&&isAtRisk(p)) out.push({pid:p.id,stage:p.currentStage,color:'var(--yellow)',tag:'AT RISK',tagBg:'var(--yell-lt)',tagBd:'#e8d090',canNotify:false,text:`<strong>${p.id}</strong> — Deadline approaching at ${p.currentStage}. Owner: ${s?.owner||''}`});
+  });
+  return out;
+}
+
+// ── KANBAN ────────────────────────────────────────────────────────────────────
+function setFilter(f,el){ activeFilter=f; document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); renderKanban(); }
+function getVisible(){ if(activeFilter==='all')return pcos; if(activeFilter==='delayed')return pcos.filter(p=>!p.released&&isDelayed(p)); if(activeFilter==='blocked')return pcos.filter(p=>!p.released&&isBlocked(p)); return pcos.filter(p=>p.priority===activeFilter); }
+
+function renderKanban(){
+  const vis=getVisible();
+  document.getElementById('kanbanBoard').innerHTML=STAGES.map(stage=>{
+    const cards=vis.filter(p=>p.currentStage===stage);
+    return `<div class="kanban-col">
+      <div class="col-top-stripe" style="background:${STAGE_HEX[stage]}"></div>
+      <div class="col-header">
+        <div class="col-name-wrap"><div class="col-dot" style="background:${STAGE_HEX[stage]}"></div><div><div class="col-name">${stage}</div><div class="col-sublabel">${STAGE_LABELS[stage]}</div></div></div>
+        <div class="col-count">${cards.length}</div>
+      </div>
+      <div class="col-cards">${cards.length?cards.map(p=>renderCard(p,stage)).join(''):'<div class="empty-col">No PCOs</div>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCard(p,stage){
+  const days=getStageDays(p),sla=STAGE_SLA[stage],dl=p.stages[stage]?.deadline,until=dl?daysUntil(dl):null;
+  const overdue=isDelayed(p),atRisk=isAtRisk(p),blocked=p.stages[stage]?.status==='blocked';
+  let chipStyle='background:var(--green-lt);color:var(--green)',chipTxt=`${days}d / ${sla}d SLA`;
+  if(p.released){chipStyle='background:var(--green-lt);color:var(--green);font-weight:600';chipTxt='RELEASED 🏁';}
+  else if(blocked){chipStyle='background:var(--purp-lt);color:var(--purple)';chipTxt='BLOCKED';}
+  else if(overdue){chipStyle='background:var(--terra-lt);color:var(--terra)';chipTxt=until!==null?`${Math.abs(until)}d OVERDUE`:`${days}d / ${sla}d`;}
+  else if(atRisk){chipStyle='background:var(--yell-lt);color:var(--yellow)';}
+  const owner=p.stages[stage]?.owner||'';
+  let dlHtml='';
+  if(dl){ const u=daysUntil(dl),cls=u<0?'dl-overdue':u<=1?'dl-soon':'',txt=u<0?`${Math.abs(u)}d overdue`:u===0?'Due today':`Due in ${u}d`; dlHtml=`<div class="card-deadline ${cls}">📅 ${dl} — ${txt}</div>`; }
+  return `<div class="pco-card acc-${stage.toLowerCase()}" onclick="openDetail('${p.id}')">
+    <div class="card-top"><span class="card-id">${p.id}</span><span class="priority-badge ${priCls(p.priority)}">${p.priority}</span></div>
+    <div class="card-title">${p.title}</div>
+    <div class="card-footer"><span class="days-chip" style="${chipStyle}">${chipTxt}</span><div class="card-owner-av" style="background:${getUserColor(owner)}" title="${owner}">${initials(owner)}</div></div>
+    ${dlHtml}
+  </div>`;
+}
+
+// ── DETAIL ────────────────────────────────────────────────────────────────────
+function openDetail(id){ const pco=pcos.find(p=>p.id===id); if(!pco)return; renderDetail(pco); document.querySelectorAll('.view,.detail-view').forEach(el=>el.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); document.getElementById('view-detail').classList.add('active'); }
+
+function renderDetail(pco){
+  const idx=STAGES.indexOf(pco.currentStage);
+  const overdue=isDelayed(pco),atRisk=isAtRisk(pco);
+  const statusLabel=pco.released?'RELEASED':overdue?'OVERDUE':atRisk?'AT RISK':'ON TRACK';
+  const statusColor=pco.released?'var(--green)':overdue?'var(--terra)':atRisk?'var(--yellow)':'var(--green)';
+
+  const tlHtml=STAGES.map(s=>{ const st=pco.stages[s].status,icon={completed:'✓','in-progress':'◉',blocked:'✕',pending:'○'}[st]||'○',color={completed:'var(--green)','in-progress':'var(--amber2)',blocked:'var(--terra)',pending:'var(--text3)'}[st]; return `<div class="tl-stage"><div class="tl-node ${st}">${icon}</div><div class="tl-name">${s}</div><div class="tl-status" style="color:${color}">${st.toUpperCase()}</div></div>`; }).join('');
+
+  const stagesHtml=STAGES.map((s,i)=>{
+    const stage=pco.stages[s],o=stage.owner,ini=initials(o),oColor=getUserColor(o);
+    const timeSpent=stage.startedAt?(stage.completedAt?Math.floor((new Date(stage.completedAt)-new Date(stage.startedAt))/86400000)+'d':daysIn(stage.startedAt)+'d (ongoing)'):'—';
+    const canInteract=i<=idx,dl=stage.deadline,until=dl?daysUntil(dl):null;
+    let dlStatus='',dlColor='var(--text2)',notifyHtml='';
+    if(dl){ if(until<0){dlStatus=`${Math.abs(until)}d overdue`;dlColor='var(--terra)';notifyHtml=`<button class="pa-notify-btn" onclick="sendPANotification(pcos.find(p=>p.id==='${pco.id}'),'${s}')">✉ Notify via Outlook</button>`;}else if(until===0){dlStatus='Due today';dlColor='var(--yellow)';}else if(until===1){dlStatus='Due tomorrow';dlColor='var(--yellow)';}else{dlStatus=`${until}d remaining`;dlColor='var(--green)';} }
+    const dlRow=canInteract?`<div class="dl-row"><span class="dl-label">📅 Deadline:</span><input type="date" class="dl-input" value="${dl||''}" onchange="setDeadline('${pco.id}','${s}',this.value)">${dl?`<span class="dl-status" style="color:${dlColor}">${dlStatus}</span>`:'<span style="font-size:10px;color:var(--text3)">Not set</span>'}${notifyHtml}</div>`:'';
+    const commentsHtml=stage.comments.map(c=>`<div class="comment"><div class="c-av" style="background:${getUserColor(c.author)}">${c.initials}</div><div class="c-body"><div class="c-meta"><span class="c-author">${c.author}</span><span class="c-date">${c.date}</span></div><div class="c-text">${c.text}</div></div></div>`).join('');
+    const isCurrentActive=stage.status==='in-progress'&&s===pco.currentStage&&!pco.released;
+    const isLastStage=s==='LTDRELZ';
+    const completeBtn=isCurrentActive?(isLastStage?`<button class="release-stage-btn" onclick="event.stopPropagation();completeStage('${pco.id}','${s}')">🏁 Mark Released</button>`:`<button class="complete-stage-btn" onclick="event.stopPropagation();completeStage('${pco.id}','${s}')">✓ Complete → ${STAGES[STAGES.indexOf(s)+1]}</button>`):'';
+    const inputHtml=canInteract&&!pco.released?`<div class="c-input-row"><input class="c-input" id="ci-${s}" placeholder="Add a comment…"><button class="c-submit" onclick="addComment('${pco.id}','${s}')">Post</button></div>`:'';
+    const expanded=stage.status!=='pending';
+    return `<div class="stage-card ${expanded?'expanded':''}" id="sc-${s}">
+      <div class="stage-card-hdr" onclick="toggleStage('${s}')">
+        <div class="shdr-left"><span class="stage-badge ${badgeCls(stage.status)}">${stage.status.toUpperCase()}</span><span class="stage-name-lbl" style="color:${STAGE_HEX[s]}">${s}</span><span class="stage-sublbl">${STAGE_LABELS[s]}</span></div>
+        <div class="shdr-right"><span class="stage-time">⏱ ${timeSpent}</span>${completeBtn}<div class="owner-chip"><div class="owner-av" style="background:${oColor}">${ini}</div>${o}</div><span class="chevron">▾</span></div>
+      </div>
+      <div class="stage-expand" style="${expanded?'':'display:none'}">
+        ${dlRow}
+        <div class="stage-body"><div class="comments-list">${commentsHtml||'<div style="color:var(--text3);font-size:11px;font-family:var(--mono)">No comments yet.</div>'}</div>${inputHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const releasedBanner=pco.released?`<div class="released-banner"><div class="released-icon">🏁</div><div><div class="released-title">PCO Successfully Released</div><div class="released-sub">All 5 stages completed · Released ${new Date(pco.releasedAt).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</div></div></div>`:'';
+
+  document.getElementById('detailContent').innerHTML=`
+    <div class="detail-back" onclick="showView('kanban')">← Back to Kanban</div>
+    ${releasedBanner}
+    <div class="detail-top">
+      <div>
+        <div class="detail-id">${pco.id} · Created ${daysIn(pco.createdAt)}d ago</div>
+        <div class="detail-title">${pco.title}</div>
+        <div class="detail-meta">
+          <span class="meta-chip"><div class="meta-dot" style="background:${statusColor}"></div>${statusLabel}</span>
+          <span class="meta-chip priority-badge ${priCls(pco.priority)}" style="border:none">${pco.priority}</span>
+          <span class="meta-chip">Stage: ${pco.released?'LTDRELZ ✓':pco.currentStage}</span>
+          ${!pco.released?`<span class="meta-chip">SLA: ${STAGE_SLA[pco.currentStage]}d</span>`:''}
+        </div>
+      </div>
+      <button onclick="openDeleteModal('${pco.id}')" style="background:var(--terra-lt);border:1px solid #f0b8ae;color:var(--terra);border-radius:7px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">🗑 Delete</button>
+    </div>
+    <div class="tl-wrap"><div class="section-title" style="margin-bottom:16px">Workflow Timeline</div><div class="timeline">${tlHtml}</div></div>
+    <div class="section-title">Stage Details</div>
+    <div class="stages-grid" style="margin-top:12px">${stagesHtml}</div>`;
+}
+
+function toggleStage(s){ const card=document.getElementById('sc-'+s);if(!card)return;card.classList.toggle('expanded');const body=card.querySelector('.stage-expand');if(body)body.style.display=card.classList.contains('expanded')?'':'none'; }
+
+async function setDeadline(pid,stage,val){ const pco=pcos.find(p=>p.id===pid);if(!pco)return; pco.stages[stage].deadline=val||null; showToast(`📅 Deadline ${val?'set to '+val:'cleared'} for ${stage}`); renderDetail(pco); await ghSave(); }
+
+async function addComment(pid,stage){ const input=document.getElementById('ci-'+stage);if(!input||!input.value.trim())return; const pco=pcos.find(p=>p.id===pid);if(!pco)return; pco.stages[stage].comments.push({author:pco.stages[stage].owner,initials:initials(pco.stages[stage].owner),date:'just now',text:input.value.trim()}); showToast('💬 Comment added'); renderDetail(pco); await ghSave(); }
+
+async function completeStage(pid,stageName){ const pco=pcos.find(p=>p.id===pid);if(!pco)return; const now=new Date().toISOString(); pco.stages[stageName].status='completed'; pco.stages[stageName].completedAt=now; const idx=STAGES.indexOf(stageName); if(idx>=STAGES.length-1){ pco.released=true; pco.releasedAt=now; pco.currentStage='LTDRELZ'; showToast('🏁 PCO Released! All stages complete.'); } else { const next=STAGES[idx+1]; pco.currentStage=next; pco.stages[next].status='in-progress'; pco.stages[next].startedAt=now; showToast(`✅ ${stageName} complete — moved to ${next}`); } renderDetail(pco); renderDashboard(); await ghSave(); }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(){
+  const d=new Date();d.setDate(d.getDate()+3);
+  document.getElementById('newDeadline').value=d.toISOString().slice(0,10);
+  document.getElementById('newPcoNum').value='';
+  document.getElementById('newTitle').value='';
+  const sel=document.getElementById('newOwner');
+  sel.innerHTML=users.length?users.map(u=>`<option value="${u.name}">${u.name} — ${u.role}</option>`).join(''):'<option value="">No users added yet</option>';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+async function createPCO(){
+  const title=document.getElementById('newTitle').value.trim();
+  const priority=document.getElementById('newPriority').value;
+  const deadline=document.getElementById('newDeadline').value;
+  const ownerName=document.getElementById('newOwner').value;
+  const customNum=document.getElementById('newPcoNum').value.trim();
+  if(!title){document.getElementById('newTitle').style.borderColor='var(--terra)';return;}
+  if(!ownerName){showToast('⚠ Add at least one user first');return;}
+  document.getElementById('newTitle').style.borderColor='';
+  const id=customNum||('PCO-'+String(pcoCounter).padStart(4,'0'));
+  if(customNum&&pcos.find(p=>p.id===customNum)){showToast('⚠ That PCO # already exists');return;}
+  if(!customNum) pcoCounter++;
+  function ownerForStage(stage){ const u=users.find(u=>u.defaultStage===stage); return u?u.name:(users[0]?.name||'Unassigned'); }
+  pcos.unshift({id,title,priority,currentStage:'LTDINV',createdAt:new Date().toISOString(),stages:{
+    LTDINV:{status:'in-progress',owner:ownerName,startedAt:new Date().toISOString(),completedAt:null,deadline,comments:[]},
+    LTDPROD:{status:'pending',owner:ownerForStage('LTDPROD'),startedAt:null,completedAt:null,deadline:null,comments:[]},
+    LTDPUR:{status:'pending',owner:ownerForStage('LTDPUR'),startedAt:null,completedAt:null,deadline:null,comments:[]},
+    LTDACCT:{status:'pending',owner:ownerForStage('LTDACCT'),startedAt:null,completedAt:null,deadline:null,comments:[]},
+    LTDRELZ:{status:'pending',owner:ownerForStage('LTDRELZ'),startedAt:null,completedAt:null,deadline:null,comments:[]},
+  }});
+  closeModal(); showToast(`✅ ${id} created`); showView('kanban');
+  await ghSave();
+}
+
+// ── USERS ─────────────────────────────────────────────────────────────────────
+function renderUsers(){
+  const grid=document.getElementById('userGrid');if(!grid)return;
+  if(!users.length){ grid.innerHTML=`<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:48px;text-align:center;box-shadow:var(--shadow)"><div style="font-size:36px;margin-bottom:12px">👤</div><div style="font-family:var(--serif);font-size:16px;color:var(--text);margin-bottom:6px">No users yet</div><div style="font-size:12px;color:var(--text2)">Add your real team members here. Their Outlook emails will be used for automatic notifications.</div></div>`; return; }
+  grid.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px">`+users.map(u=>`
+    <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px">
+      <div style="width:44px;height:44px;border-radius:50%;background:${u.color};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:white;flex-shrink:0">${initials(u.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;color:var(--text)">${u.name}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:1px">${u.role}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px">${u.email}</div>
+        <div style="margin-top:6px"><span style="background:${STAGE_HEX[u.defaultStage]||'#888'};color:white;font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 7px;border-radius:4px">${u.defaultStage}</span></div>
+      </div>
+      <button onclick="deleteUser('${u.name}')" style="background:var(--terra-lt);border:1px solid #f0b8ae;color:var(--terra);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">✕</button>
+    </div>`).join('')+'</div>';
+}
+
+function openUserModal(){ document.getElementById('uName').value=''; document.getElementById('uEmail').value=''; document.getElementById('uName').style.borderColor=''; document.getElementById('uEmail').style.borderColor=''; document.getElementById('userModalOverlay').classList.add('open'); }
+function closeUserModal(){ document.getElementById('userModalOverlay').classList.remove('open'); }
+document.getElementById('userModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeUserModal();});
+
+async function saveUser(){
+  const name=document.getElementById('uName').value.trim(),email=document.getElementById('uEmail').value.trim(),role=document.getElementById('uRole').value,defaultStage=document.getElementById('uStage').value;
+  let ok=true;
+  if(!name){document.getElementById('uName').style.borderColor='var(--terra)';ok=false;}
+  if(!email){document.getElementById('uEmail').style.borderColor='var(--terra)';ok=false;}
+  if(!ok)return;
+  if(users.find(u=>u.name===name)){showToast('⚠ Name already exists');return;}
+  users.push({name,email,role,defaultStage,color:AVATAR_COLORS[userColorIdx%AVATAR_COLORS.length]});
+  userColorIdx++;
+  closeUserModal(); showToast(`✅ ${name} added`); renderUsers();
+  await ghSave();
+}
+
+async function deleteUser(name){
+  const inUse=pcos.some(p=>STAGES.some(s=>p.stages[s].owner===name));
+  if(inUse){showToast('⚠ Cannot remove — user owns active PCO stages');return;}
+  users=users.filter(u=>u.name!==name); showToast('🗑 User removed'); renderUsers();
+  await ghSave();
+}
+
+// ── DELETE PCO ────────────────────────────────────────────────────────────────
+function openDeleteModal(pid){ const pco=pcos.find(p=>p.id===pid);if(!pco)return; pendingDeleteId=pid; document.getElementById('deleteModalMsg').textContent=`"${pco.title}" (${pco.id}) will be permanently deleted.`; document.getElementById('deleteModalOverlay').classList.add('open'); }
+function closeDeleteModal(){ document.getElementById('deleteModalOverlay').classList.remove('open'); pendingDeleteId=null; }
+document.getElementById('deleteModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDeleteModal();});
+async function confirmDelete(){ if(!pendingDeleteId)return; pcos=pcos.filter(p=>p.id!==pendingDeleteId); closeDeleteModal(); showToast('🗑 PCO deleted'); showView('kanban'); await ghSave(); }
+
+// ── SETTINGS ACTIONS ──────────────────────────────────────────────────────────
+async function saveGitHub(){
+  cfg.ghUser=document.getElementById('ghUser').value.trim();
+  cfg.ghRepo=document.getElementById('ghRepo').value.trim();
+  cfg.ghToken=document.getElementById('ghToken').value.trim();
+  if(!cfg.ghUser||!cfg.ghRepo||!cfg.ghToken){ document.getElementById('ghStatus').innerHTML='<span style="color:var(--terra)">Please fill all fields.</span>'; return; }
+  saveConfig();
+  document.getElementById('ghStatus').innerHTML='<span style="color:var(--text3)">Testing…</span>';
+  // Test with a direct API call and show detailed error
+  try {
+    const r = await fetch(`https://api.github.com/repos/${cfg.ghUser}/${cfg.ghRepo}`, { headers: ghHeaders() });
+    const j = await r.json();
+    if(r.status===401){ document.getElementById('ghStatus').innerHTML='<span class="disconnected-badge">● Token invalid or expired — generate a new one</span>'; return; }
+    if(r.status===404){ document.getElementById('ghStatus').innerHTML='<span class="disconnected-badge">● Repo not found — check username & repo name</span>'; return; }
+    if(r.status===403){ document.getElementById('ghStatus').innerHTML='<span class="disconnected-badge">● Token missing "repo" scope — regenerate with repo ticked</span>'; return; }
+    if(!r.ok){ document.getElementById('ghStatus').innerHTML=`<span class="disconnected-badge">● Error ${r.status}: ${j.message}</span>`; return; }
+    // Repo found — now load the data file
+    document.getElementById('ghStatus').innerHTML='<span class="connected-badge">● Connected — loading data…</span>';
+    updateSetupBanner();
+    await ghLoad();
+    document.getElementById('ghStatus').innerHTML='<span class="connected-badge">● Connected & synced ✓</span>';
+  } catch(e){
+    document.getElementById('ghStatus').innerHTML=`<span class="disconnected-badge">● Network error: ${e.message} — try hosting the file on a web server</span>`;
+  }
+}
+
+function savePowerAutomate(){
+  cfg.paUrl=document.getElementById('paUrl').value.trim();
+  if(!cfg.paUrl){ document.getElementById('paStatus').innerHTML='<span style="color:var(--terra)">Please enter the URL.</span>'; return; }
+  saveConfig();
+  document.getElementById('paStatus').innerHTML='<span class="connected-badge">● URL saved</span>';
+  updateSetupBanner();
+  showToast('⚡ Power Automate URL saved');
+}
+
+async function testPowerAutomate(){
+  if(!cfg.paUrl){ showToast('⚠ Save the Power Automate URL first'); return; }
+  document.getElementById('paStatus').innerHTML='<span style="color:var(--text3)">Sending test…</span>';
+  try {
+    await fetch(cfg.paUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify({toEmail:'test@example.com',ownerName:'Test User',pcoId:'TEST-001',pcoTitle:'Test PCO',stage:'LTDINV',stageLabel:'Inv. Review',deadline:'2025-01-01',daysOverdue:3,priority:'HIGH'}) });
+    document.getElementById('paStatus').innerHTML='<span class="connected-badge">● Test sent — check your Outlook</span>';
+    showToast('📧 Test email triggered — check Outlook');
+  } catch(e){
+    document.getElementById('paStatus').innerHTML='<span class="disconnected-badge">● Failed: '+e.message+'</span>';
+  }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadConfig();
+if(cfg.ghUser&&cfg.ghRepo&&cfg.ghToken){ ghLoad(); } else { renderDashboard(); renderKanban(); }
+// Auto-sync every 60 seconds
+setInterval(()=>{ if(cfg.ghUser&&cfg.ghRepo&&cfg.ghToken) ghLoad(); }, 60000);
+</script>
+</body>
+</html>
