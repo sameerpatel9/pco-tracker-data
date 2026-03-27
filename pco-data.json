@@ -1,6 +1,14 @@
 {
   "pcos": [],
-  "users": [],
-  "userColorIdx": 0,
+  "users": [
+    {
+      "name": "Sameer Patel",
+      "email": "sameer.patel@clevelandrange.com",
+      "role": "Other",
+      "defaultStage": "LTDINV",
+      "color": "#2e6fa3"
+    }
+  ],
+  "userColorIdx": 1,
   "pcoCounter": 1
 }
