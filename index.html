@@ -535,7 +535,7 @@ const GH_FILE = 'pco-data.json';
 let pcos = [], users = [];
 let userColorIdx = 0, pcoCounter = 1, pendingDeleteId = null;
 let activeFilter = 'all';
-let cfg = { ghUser:'sameerpatel9', ghRepo:'pco-tracker-data', ghToken:'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', paUrl:'' };
+let cfg = { ghUser:'sameerpatel9', ghRepo:'pco-tracker-data', ghToken:'__PROXY__', paUrl:'' };
 let ghFileSha = null; // needed for GitHub PUT updates
 let syncPending = false;
 
@@ -563,33 +563,22 @@ function updateSetupBanner(){
 }
 
 // ── GITHUB SYNC ───────────────────────────────────────────────────────────────
-function ghHeaders(){
-  return { 'Authorization': `token ${cfg.ghToken}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' };
-}
-function ghApiUrl(){ return `https://api.github.com/repos/${cfg.ghUser}/${cfg.ghRepo}/contents/${GH_FILE}`; }
+function ghHeaders(){ return { 'Content-Type': 'application/json' }; }
+function ghApiUrl(){ return `/.netlify/functions/github-proxy`; }
 
 async function ghLoad(){
   setSyncState('syncing','Syncing…');
   try {
-    const r = await fetch(ghApiUrl(), { headers: ghHeaders() });
-    if(r.status === 404){
-      // File doesn't exist yet — init empty
-      ghFileSha = null;
-      await ghSave();
-      setSyncState('ok','Synced');
-      return;
-    }
-    if(r.status===401) throw new Error('Token invalid — generate a new one');
-    if(r.status===403) throw new Error('Token missing repo scope');
-    if(!r.ok) throw new Error('GitHub error '+r.status);
+    const r = await fetch('/.netlify/functions/github-proxy?action=load');
+    if(!r.ok) throw new Error('Proxy error '+r.status);
     const j = await r.json();
+    if(j.error) throw new Error(j.error);
+    if(j.fresh){ setSyncState('ok','Synced'); renderAll(); return; }
     ghFileSha = j.sha;
-    const raw = atob(j.content.replace(/\n/g,''));
-    const data = JSON.parse(raw);
-    pcos = data.pcos || [];
-    users = data.users || [];
-    userColorIdx = data.userColorIdx || 0;
-    pcoCounter = data.pcoCounter || 1;
+    pcos = j.data.pcos || [];
+    users = j.data.users || [];
+    userColorIdx = j.data.userColorIdx || 0;
+    pcoCounter = j.data.pcoCounter || 1;
     setSyncState('ok','Synced just now');
     renderAll();
   } catch(e){
@@ -599,17 +588,14 @@ async function ghLoad(){
 }
 
 async function ghSave(){
-  if(!cfg.ghUser || !cfg.ghRepo || !cfg.ghToken) return; // not configured
   setSyncState('syncing','Saving…');
   const payload = { pcos, users, userColorIdx, pcoCounter };
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
-  const body = { message: `PCO update ${new Date().toISOString()}`, content };
-  if(ghFileSha) body.sha = ghFileSha;
   try {
-    const r = await fetch(ghApiUrl(), { method:'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
-    if(!r.ok){ const e=await r.json(); throw new Error(e.message||r.status); }
+    const r = await fetch('/.netlify/functions/github-proxy', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sha: ghFileSha, data: payload }) });
+    if(!r.ok) throw new Error('Proxy error '+r.status);
     const j = await r.json();
-    ghFileSha = j.content.sha;
+    if(j.error) throw new Error(j.error);
+    ghFileSha = j.sha;
     setSyncState('ok','Saved '+new Date().toLocaleTimeString());
   } catch(e){
     setSyncState('err','Save failed');
@@ -956,7 +942,7 @@ async function saveGitHub(){
   cfg.ghToken=document.getElementById('ghToken').value.trim();
   if(!cfg.ghUser||!cfg.ghRepo||!cfg.ghToken){ document.getElementById('ghStatus').innerHTML='<span style="color:var(--terra)">Please fill all fields.</span>'; return; }
   saveConfig();
-  document.getElementById('ghStatus').innerHTML='<span style="color:var(--text3)">Testing…</span>';
+  document.getElementById('ghStatus').innerHTML='<span class="connected-badge">● Connected via Netlify proxy ✓</span>'; return;
   // Test with a direct API call and show detailed error
   try {
     const r = await fetch(`https://api.github.com/repos/${cfg.ghUser}/${cfg.ghRepo}`, { headers: ghHeaders() });
