@@ -4,21 +4,21 @@
       "id": "2343",
       "title": "T5",
       "priority": "MEDIUM",
-      "currentStage": "LTDINV",
+      "currentStage": "LTDPROD",
       "createdAt": "2026-03-27T12:11:19.995Z",
       "stages": {
         "LTDINV": {
-          "status": "in-progress",
+          "status": "completed",
           "owner": "Sameer Patel",
           "startedAt": "2026-03-27T12:11:19.995Z",
-          "completedAt": null,
+          "completedAt": "2026-03-27T12:11:37.156Z",
           "deadline": "2026-03-27",
           "comments": []
         },
         "LTDPROD": {
-          "status": "pending",
+          "status": "in-progress",
           "owner": "Sameer Patel",
-          "startedAt": null,
+          "startedAt": "2026-03-27T12:11:37.156Z",
           "completedAt": null,
           "deadline": null,
           "comments": []
