@@ -4,7 +4,7 @@
       "id": "1234",
       "title": "Test",
       "priority": "HIGH",
-      "currentStage": "LTDPROD",
+      "currentStage": "LTDPUR",
       "createdAt": "2026-03-27T00:41:23.628Z",
       "stages": {
         "LTDINV": {
@@ -16,17 +16,17 @@
           "comments": []
         },
         "LTDPROD": {
-          "status": "in-progress",
+          "status": "completed",
           "owner": "Sameer Patel",
           "startedAt": "2026-03-27T00:41:48.508Z",
-          "completedAt": null,
+          "completedAt": "2026-03-27T11:35:38.229Z",
           "deadline": "2026-03-26",
           "comments": []
         },
         "LTDPUR": {
-          "status": "pending",
+          "status": "in-progress",
           "owner": "Sameer Patel",
-          "startedAt": null,
+          "startedAt": "2026-03-27T11:35:38.229Z",
           "completedAt": null,
           "deadline": null,
           "comments": []
